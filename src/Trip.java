@@ -16,8 +16,8 @@ public class Trip {
 	}
 
 	public int getNextStationTime(int currTime) {
-		currTime++; // So it doesnt return itself
-		while (currTime <= 1440) {
+		currTime++; // So it doesnt return itself, also there cant be two departures in a trip, at the same time.
+		while (currTime <= 2000) {
 			if (trip.containsKey(currTime))
 				return currTime;
 			currTime++;
@@ -32,6 +32,15 @@ public class Trip {
 				return trip.get(getNextStationTime(ent.getKey()));
 		}
 		return null;
+	}
+	
+	public int getDepartureTime(Station station) {
+		for(Iterator<Entry<Integer, Station>> it = trip.entrySet().iterator(); it.hasNext();) {
+			Entry<Integer, Station> ent = it.next();
+			if(station.equals(ent.getValue()))
+				return ent.getKey();
+		}
+		return Integer.MAX_VALUE;
 	}
 
 }

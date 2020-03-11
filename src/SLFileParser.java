@@ -60,7 +60,7 @@ public class SLFileParser {
 		String[] newTime = time.split(":");
 		int h = (Integer.parseInt(newTime[0])) * 60;
 		int m = Integer.parseInt(newTime[1]);
-		return (h + m) % 1440;
+		return (h + m);
 	}
 
 	private void parseStations() throws FileNotFoundException {

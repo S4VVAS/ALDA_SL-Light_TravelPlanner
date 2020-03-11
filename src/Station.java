@@ -1,4 +1,6 @@
 import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.Map.Entry;
 
 public class Station {
 	
@@ -31,6 +33,23 @@ public class Station {
 	
 	public Hashtable<Long, Trip> getTrips(){
 		return trips;
+	}
+	
+	public Hashtable<Long, Trip> getEarliestTrips(int time){
+		Hashtable<Long, Trip> erlTrips = new Hashtable<Long, Trip>(); //Tripid, trip
+		Hashtable<Station, Trip> tripToStation = new Hashtable<Station, Trip>();
+		
+		for(Iterator<Entry<Long, Trip>> it = trips.entrySet().iterator(); it.hasNext();) {
+			
+		}
+		
+		
+		
+		
+		
+		
+		return trips;
+		
 	}
 	
 
