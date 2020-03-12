@@ -1,11 +1,7 @@
+/**@author Savvas Giortsis (sagi2536)*/
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Map.Entry;
 import java.util.Scanner;
 
@@ -19,7 +15,6 @@ public class SLFileParser {
 
 	public Hashtable<Long, Station> parsedStations = new Hashtable<Long, Station>(); //StationId, station
 	public Hashtable<Long, Trip> parsedTrips = new Hashtable<Long, Trip>(); //TripId, trip
-	//public Hashtable<Long, Station> parsedLines;
 
 	public SLFileParser() {
 		try {
@@ -41,6 +36,7 @@ public class SLFileParser {
 			String[] line = file.nextLine().split(",");
 			trips.put(Long.parseLong(line[2]), Long.parseLong((String) line[0].subSequence(6, 7)));
 		}
+		file.close();
 	}
 
 	private void parseTimes() throws FileNotFoundException {
@@ -54,6 +50,7 @@ public class SLFileParser {
 				stopTimes.put(tid, new Hashtable<Long, Integer>());
 			stopTimes.get(tid).put(Long.parseLong(line[3]), decTime(line[2]));
 		}
+		file.close();
 	}
 
 	private Integer decTime(String time) {
@@ -73,6 +70,7 @@ public class SLFileParser {
 				stations.put(Long.parseLong(line[0]), new Hashtable<String, double[]>());
 			stations.get(Long.parseLong(line[0])).put(line[1], new double[] {Double.parseDouble(line[2]), Double.parseDouble(line[3])});
 		}
+		file.close();
 	}
 
 	private void makeStations() {
