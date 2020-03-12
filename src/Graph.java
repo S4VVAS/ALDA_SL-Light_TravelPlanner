@@ -1,3 +1,4 @@
+/**@author Savvas Giortsis (sagi2536)*/
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -6,8 +7,9 @@ import java.util.PriorityQueue;
 
 public class Graph {
 
-	private Hashtable<Long, Station> stations; // StationId, station
-	private Hashtable<Long, Trip> trips; // TripId, trip
+	/**Stores stopId as key and {@link Station} as value.
+	 * @contains all the stations that have been parsed*/
+	private Hashtable<Long, Station> stations;
 	private final boolean aStar;
 	private Station goal;
 
@@ -15,9 +17,22 @@ public class Graph {
 		this.aStar = aStar;
 		SLFileParser slP = new SLFileParser();
 		stations = slP.parsedStations;
-		trips = slP.parsedTrips;
 	}
-
+	
+	/**
+	 * Generates a route from station <code>start</code> to <code>goal</code>.
+	 *
+	 * @throws IllegalArgumentException if the {@link Station} objects with same
+	 * name based on <code>start</code> or <code>goal</code> do not exist in 
+	 * {@link #stations}.
+	 * @param start is the starting station from where the path is calculated (case sensitive).
+	 * @param goal is the destination station to where the path is calculated (case sensitive).
+	 * @param currentTime is the time of departure from <code>start</code>. Minutes in a day, 00:00 is 0 or 1440, 16:40 is 1000 etc.
+	 * @return Returns a {@link String} with the path that has been generated from {@link #backtrack(PathVisit) backtrack}
+	 * using {@link #makeMinSpanTree(Station, int) makeMinSpanTree}.
+	 * @since V1.0
+	 * @author Savvas Giortsis (sagi2536)
+	 * */
 	public String findRoute(String start, String goal, int currentTime) {
 		if (start.isEmpty() || goal.isEmpty() || getStation(start) == null || getStation(goal) == null)
 			throw new IllegalArgumentException();
@@ -33,7 +48,21 @@ public class Graph {
 		}
 		return null;
 	}
-
+	
+	/**
+	 * Creates a minimum spanning tree, staring from <code>start</code>. This method creates different spanning
+	 * trees depending on {@link #aStar}. The aStar boolean dictates when the creation of the spanning tree is to 
+	 * be stopped. If <code>true</code> the creation of the tree will stop when the <code>goal</code> {@link Station}
+	 * is reached, stored in {@link Graph}. if {@link #aStar} is <code>false</code> the creation may continue 
+	 * until all the {@link Station}s that can be visited, are visited. That occurs when the queue, 
+	 * <code>queue</code> is empty.
+	 * @return A PathVisit object which contains the goal station. That path contains links to other paths
+	 * so that backtracking can be done all the way to the origin, the starting node.
+	 * @param start is the starting station, from where the path is calculated.
+	 * @param currentTime is the time of departure from the starting station.
+	 * @since V1.0
+	 * @author Savvas Giortsis (sagi2536)
+	 * */
 	private PathVisit makeMinSpanTree(Station start, int currentTime) {
 		PriorityQueue<PathVisit> queue = new PriorityQueue<PathVisit>();
 		Hashtable<Station, PathVisit> visited = new Hashtable<Station, PathVisit>(); //Would use a stack, but faster with no A* using this
@@ -56,7 +85,7 @@ public class Graph {
 			}
 			visited.put(currNode.station, currNode); //Place current node in visited
 		}
-		if(aStar) //If aStar it will skip adding the goal node to visited in loop due to condition
+		if(aStar && queue.size() > 0) //If aStar it will skip adding the goal node to visited in loop due to condition
 			visited.put(queue.peek().station, queue.poll()); //So we do that here
 		
 		return visited.get(goal);
@@ -71,18 +100,16 @@ public class Graph {
 		output.append("\nYou arrive at your destination, " + last.station.name + " at " + convertTimeToTime(last.time) + "\n");
 		
 		for(; current.pathVia != null; current = current.pathVia) {
-			if(!prev.trip.equals(current.trip)) {
+			if(!prev.trip.equals(current.trip)) 
 				output.insert(0,"\nChange lines at " + current.station.name + " from line " + prev.trip.serviceId + " to line " + current.trip.serviceId + "\n" +
 						 "Line " + current.trip.serviceId + " departs at " + convertTimeToTime(current.time) + " from " + current.station.name + "\n\n");
-			}
-			else {
+			else 
 				output.insert(0, "\t Travel past " + current.station.name + " at " + convertTimeToTime(current.time) + "\n");
-			}
 			prev = current;
 		}
 		output.insert(0,"Your journey begins at " + current.station.name + " at " + convertTimeToTime(current.time) + "\n\n");
-
 		output.append("\nYour total trip time is: " + (arrTime - current.time) + " minutes\n");
+		
 		return output.toString();
 	}
 	
@@ -101,18 +128,16 @@ public class Graph {
 		public final PathVisit pathVia;
 		public final Trip trip;
 		public final double weight; // Based on time
-		public final int time; //Time at station
+		public final int time; //Time at currentNode
 		public final double distanceLeft;
 
 		public PathVisit(Station currentNode, PathVisit pathVia, Trip trip, int time) {
-			// CALC TIME
 			station = currentNode;
 			this.pathVia = pathVia;
 			this.trip = trip;
 			this.time = time;
-			weight = (pathVia == null ? 0 : Math.abs(time - pathVia.time)); // If trip changed
+			weight = (pathVia == null ? 0 : Math.abs(time - pathVia.time));
 			this.distanceLeft = aStar ? dirTimeToGoal(currentNode) : 0;
-
 		}
 
 		@Override
