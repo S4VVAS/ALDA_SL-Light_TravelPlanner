@@ -27,7 +27,6 @@ public class Graph {
 	 * {@link #stations}.
  	 * @throws IllegalArgumentException if <code>start</code> or <code>goal</code> are null. 
  	 * @throws IllegalArgumentException if <code>currentTime</code> is bellow 0.
-	 * can't be bellow 0.
 	 * @param start is the starting station from where the path is calculated (case sensitive).
 	 * @param goal is the destination station to where the path is calculated (case sensitive).
 	 * @param currentTime is the time of departure from <code>start</code>. Minutes in a day, 00:00 is 0 or 1440, 16:40 is 1000 etc.
