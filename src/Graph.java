@@ -20,11 +20,14 @@ public class Graph {
 	}
 	
 	/**
-	 * Generates a route from station <code>start</code> to <code>goal</code>.
+	 * Generates a route in the form of a {@link String}, from station <code>start</code> to <code>goal</code>.
 	 *
-	 * @throws IllegalArgumentException if the {@link Station} objects with same
-	 * name based on <code>start</code> or <code>goal</code> do not exist in 
+	 * @throws IllegalArgumentException if no {@link Station} objects with same
+	 * station name based on <code>start</code> or <code>goal</code> exist in 
 	 * {@link #stations}.
+ 	 * @throws IllegalArgumentException if <code>start</code> or <code>goal</code> are null. 
+ 	 * @throws IllegalArgumentException if <code>currentTime</code> is bellow 0.
+	 * can't be bellow 0.
 	 * @param start is the starting station from where the path is calculated (case sensitive).
 	 * @param goal is the destination station to where the path is calculated (case sensitive).
 	 * @param currentTime is the time of departure from <code>start</code>. Minutes in a day, 00:00 is 0 or 1440, 16:40 is 1000 etc.
@@ -34,16 +37,19 @@ public class Graph {
 	 * @author Savvas Giortsis (sagi2536)
 	 * */
 	public String findRoute(String start, String goal, int currentTime) {
-		if (start.isEmpty() || goal.isEmpty() || getStation(start) == null || getStation(goal) == null)
+		if (getStation(start) == null || getStation(goal) == null || currentTime < 0)
 			throw new IllegalArgumentException();
 		this.goal = getStation(goal);
-		return backtrack(makeMinSpanTree(getStation(start), currentTime));
+		PathVisit lastNode = makeMinSpanTree(getStation(start), currentTime);
+		if(lastNode == null)
+			return "No path could be found at this time";
+		return backtrack(lastNode);
 	}
 
 	private Station getStation(String name) {
 		for (Iterator<Entry<Long, Station>> it = stations.entrySet().iterator(); it.hasNext();) {
 			Entry<Long, Station> ent = it.next();
-			if (ent.getValue().name.equals(name))
+			if (ent.getValue().name.equalsIgnoreCase(name))
 				return ent.getValue();
 		}
 		return null;
