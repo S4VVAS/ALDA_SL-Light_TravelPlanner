@@ -1,5 +1,6 @@
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Map.Entry;
 import java.util.PriorityQueue;
 
@@ -36,32 +37,22 @@ public class Graph {
 	private PathVisit makeMinSpanTree(Station start, int currentTime) {
 		PriorityQueue<PathVisit> queue = new PriorityQueue<PathVisit>();
 		Hashtable<Station, PathVisit> visited = new Hashtable<Station, PathVisit>(); //Would use a stack, but faster with no A* using this
-
-		queue.add(new PathVisit(start, null, null, currentTime, aStar ? distanceToGoal(start) : 0)); //Adds the start node to queue
+		queue.add(new PathVisit(start, null, null, currentTime)); //Adds the start node to queue
 
 		for (PathVisit currNode; queue.size() != 0 && (aStar ? !queue.peek().station.equals(goal) : true);) { //Loop while queue is not empty
 			currNode = queue.poll(); //Poll from queue
-			Hashtable<Long, Trip> availTrips = currNode.station.getTrips(); // Fetch all avail trips from curr station.
+			LinkedList<Trip> availTrips = currNode.station.getLowestWightTrips(currNode.time, currNode.trip); // Fetch all earliest trips
 			
-			for (Iterator<Entry<Long, Trip>> it = availTrips.entrySet().iterator(); it.hasNext();) { //Loop through trips
-				Entry<Long, Trip> currTrip = it.next();
-				Station nextStation = currTrip.getValue().getNextStation(currNode.station); //Gets next station for trip from current station
-
-				if (nextStation != null) { // If not null, this station is not last in the trip (slutstation)
-					int changingPenalty = currTrip.getValue().equals(currNode.trip) ? 0 : 5;
+			for (Iterator<Trip> it = availTrips.iterator(); it.hasNext();) { //Loop through trips
+				Trip currTrip = it.next(); //Gets next trip
+				Station nextStation = currTrip.getNextStation(currNode.station); //Gets next station for trip from current station
+				int nextStationTime = currTrip.getDepartureTime(nextStation); //Gets the time at next station
+				PathVisit newTrip = new PathVisit(nextStation, currNode, currTrip , nextStationTime); //Creates path visit
 					
-					int nextDeparture = currTrip.getValue().getDepartureTime(currNode.station);
-				//	DEPARTURE TIME RATHER THAN NEXT STATION TIME
-					
-					int nextStationTime = currTrip.getValue().getNextStationTime(nextDeparture + changingPenalty); //Gets the time of arrival at next station
-					double distanceLeft = aStar ? distanceToGoal(nextStation) : 0; //If a* is used, calculates distance to end
-					PathVisit newTrip = new PathVisit(nextStation, currNode, currTrip.getValue() , nextStationTime, distanceLeft); //Creates path visit
-					if (!visited.containsKey(newTrip.station)) //If station not visited, add to queue
-						queue.add(newTrip);
-					else if (visited.get(newTrip.station).weight > newTrip.weight) //Else it is visited, if previous weight is bigger, relax
-						visited.replace(newTrip.station, newTrip);
-					// if newTrip existed in visited, but was of bigger weight, we don't do anything to it.
-				}
+				if (!visited.containsKey(nextStation)) //If station not visited, add to queue
+					queue.add(newTrip);
+				else if (visited.get(nextStation).weight > newTrip.weight) //Else it is visited, if previous weight is bigger, relax
+					visited.replace(nextStation, newTrip);
 			}
 			visited.put(currNode.station, currNode); //Place current node in visited
 		}
@@ -75,39 +66,52 @@ public class Graph {
 		StringBuilder output = new StringBuilder("");
 		PathVisit current = last;
 		PathVisit prev = last;
+		int arrTime = last.time;
 		
+		output.append("\nYou arrive at your destination, " + last.station.name + " at " + convertTimeToTime(last.time) + "\n");
 		
 		for(; current.pathVia != null; current = current.pathVia) {
-			output.append(current.station.name + 
-					" at time " + current.time +
-					" on line " + (prev.trip.equals(current.trip) ? "" : "Line changed") + "\n\n");
+			if(!prev.trip.equals(current.trip)) {
+				output.insert(0,"\nChange lines at " + current.station.name + " from line " + prev.trip.serviceId + " to line " + current.trip.serviceId + "\n" +
+						 "Line " + current.trip.serviceId + " departs at " + convertTimeToTime(current.time) + " from " + current.station.name + "\n\n");
+			}
+			else {
+				output.insert(0, "\t Travel past " + current.station.name + " at " + convertTimeToTime(current.time) + "\n");
+			}
 			prev = current;
 		}
-		output.append(current.station.name + " at time " + current.time + "\n\n");
-				
+		output.insert(0,"Your journey begins at " + current.station.name + " at " + convertTimeToTime(current.time) + "\n\n");
+
+		output.append("\nYour total trip time is: " + (arrTime - current.time) + " minutes\n");
 		return output.toString();
 	}
 	
-	private double distanceToGoal(Station curr) {
-		return Math.sqrt(Math.pow((curr.cordX - goal.cordX), 2) + Math.pow((curr.cordY - goal.cordY), 2)) * 1000 ;
+	private String convertTimeToTime(int time) {
+		return (time - time%60) / 60 + ":" + (time%60 < 10 ? "0" + time%60 : time%60);
+	}
+	
+	private double dirTimeToGoal(Station curr) {
+		double notAccurateButSomewhatOkDistanceInMeters = Math.sqrt(Math.pow((curr.cordX - goal.cordX), 2) + Math.pow((curr.cordY - goal.cordY), 2)) * 100000;
+		double estimatedTravelTime =  (notAccurateButSomewhatOkDistanceInMeters/ 30); //30 m/s (108-ish km/h)
+		return estimatedTravelTime / 60; //divide to get time in minutes
 	}
 
 	class PathVisit implements Comparable<PathVisit> {
 		public final Station station;
 		public final PathVisit pathVia;
 		public final Trip trip;
-		public final double weight; // Time
-		public final int time;
+		public final double weight; // Based on time
+		public final int time; //Time at station
 		public final double distanceLeft;
 
-		public PathVisit(Station currentNode, PathVisit pathVia, Trip trip, int time, double distanceLeft) {
+		public PathVisit(Station currentNode, PathVisit pathVia, Trip trip, int time) {
 			// CALC TIME
 			station = currentNode;
 			this.pathVia = pathVia;
 			this.trip = trip;
 			this.time = time;
 			weight = (pathVia == null ? 0 : Math.abs(time - pathVia.time)); // If trip changed
-			this.distanceLeft = distanceLeft;
+			this.distanceLeft = aStar ? dirTimeToGoal(currentNode) : 0;
 
 		}
 

@@ -39,7 +39,7 @@ public class SLFileParser {
 		
 		while(file.hasNext()) {
 			String[] line = file.nextLine().split(",");
-			trips.put(Long.parseLong(line[2]), Long.parseLong(line[1]));
+			trips.put(Long.parseLong(line[2]), Long.parseLong((String) line[0].subSequence(6, 7)));
 		}
 	}
 
